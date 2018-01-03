@@ -342,8 +342,16 @@ func resolveRelativeTargets(targets []string) ([]string, error) {
 	return result, nil
 }
 
+// Options collect attributes for a new snapshot.
+type Options struct {
+	Tags     []string
+	Hostname string
+	Excludes []string
+	Time     time.Time
+}
+
 // Snapshot saves several targets and returns a snapshot.
-func (arch *NewArchiver) Snapshot(ctx context.Context, targets []string) (*restic.Snapshot, restic.ID, error) {
+func (arch *NewArchiver) Snapshot(ctx context.Context, targets []string, opts Options) (*restic.Snapshot, restic.ID, error) {
 	err := arch.Valid()
 	if err != nil {
 		return nil, restic.ID{}, err
@@ -387,7 +395,8 @@ func (arch *NewArchiver) Snapshot(ctx context.Context, targets []string) (*resti
 		return nil, restic.ID{}, err
 	}
 
-	sn, err := restic.NewSnapshot(targets, nil, "", time.Now())
+	sn, err := restic.NewSnapshot(targets, opts.Tags, opts.Hostname, opts.Time)
+	sn.Excludes = opts.Excludes
 	sn.Tree = &id
 
 	id, err = arch.repo.SaveJSONUnpacked(ctx, restic.SnapshotFile, sn)

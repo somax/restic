@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/restic/restic/internal/checker"
 	"github.com/restic/restic/internal/fs"
@@ -477,7 +478,7 @@ func TestNewArchiverSnapshot(t *testing.T) {
 			}
 
 			t.Logf("targets: %v", targets)
-			_, snapshotID, err := arch.Snapshot(ctx, targets)
+			_, snapshotID, err := arch.Snapshot(ctx, targets, Options{Time: time.Now()})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -621,7 +622,7 @@ func TestNewArchiverSnapshotSelect(t *testing.T) {
 			defer back()
 
 			targets := []string{"."}
-			_, snapshotID, err := arch.Snapshot(ctx, targets)
+			_, snapshotID, err := arch.Snapshot(ctx, targets, Options{Time: time.Now()})
 			if err != nil {
 				t.Fatal(err)
 			}
