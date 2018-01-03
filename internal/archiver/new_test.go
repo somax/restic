@@ -45,7 +45,7 @@ func TestNewArchiverSaveFile(t *testing.T) {
 			defer cleanup()
 
 			arch := NewArchiver{
-				repo: repo,
+				Repo: repo,
 				Select: func(string, os.FileInfo) bool {
 					return true
 				},
@@ -170,7 +170,7 @@ func TestNewArchiverSaveDir(t *testing.T) {
 			defer cleanup()
 
 			arch := NewArchiver{
-				repo: repo,
+				Repo: repo,
 				Select: func(string, os.FileInfo) bool {
 					return true
 				},
@@ -458,7 +458,7 @@ func TestNewArchiverSnapshot(t *testing.T) {
 			defer cleanup()
 
 			arch := NewArchiver{
-				repo: repo,
+				Repo: repo,
 				Select: func(string, os.FileInfo) bool {
 					return true
 				},
@@ -614,7 +614,7 @@ func TestNewArchiverSnapshotSelect(t *testing.T) {
 			defer cleanup()
 
 			arch := NewArchiver{
-				repo:   repo,
+				Repo:   repo,
 				Select: test.selFn,
 			}
 

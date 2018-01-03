@@ -21,13 +21,13 @@ type SelectFunc func(item string, fi os.FileInfo) bool
 
 // NewArchiver saves a directory structure to the repo.
 type NewArchiver struct {
-	repo   restic.Repository
+	Repo   restic.Repository
 	Select SelectFunc
 }
 
 // Valid returns an error if anything is missing.
 func (arch *NewArchiver) Valid() error {
-	if arch.repo == nil {
+	if arch.Repo == nil {
 		return errors.New("repo is not set")
 	}
 
@@ -48,7 +48,7 @@ func (arch *NewArchiver) SaveFile(ctx context.Context, filename string) (*restic
 		return nil, err
 	}
 
-	chnker := chunker.New(f, arch.repo.Config().ChunkerPolynomial)
+	chnker := chunker.New(f, arch.Repo.Config().ChunkerPolynomial)
 
 	fi, err := f.Stat()
 	if err != nil {
@@ -85,7 +85,7 @@ func (arch *NewArchiver) SaveFile(ctx context.Context, filename string) (*restic
 			return nil, ctx.Err()
 		}
 
-		id, err := arch.repo.SaveBlob(ctx, restic.DataBlob, chunk.Data, restic.ID{})
+		id, err := arch.Repo.SaveBlob(ctx, restic.DataBlob, chunk.Data, restic.ID{})
 		if err != nil {
 			_ = f.Close()
 			return nil, err
@@ -178,7 +178,7 @@ func (arch *NewArchiver) SaveDir(ctx context.Context, prefix string, fi os.FileI
 		return nil, err
 	}
 
-	id, err := arch.repo.SaveTree(ctx, tree)
+	id, err := arch.Repo.SaveTree(ctx, tree)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +262,7 @@ func (arch *NewArchiver) saveArchiveTree(ctx context.Context, prefix string, atr
 			return nil, err
 		}
 
-		id, err := arch.repo.SaveTree(ctx, subtree)
+		id, err := arch.Repo.SaveTree(ctx, subtree)
 		if err != nil {
 			return nil, err
 		}
@@ -380,17 +380,17 @@ func (arch *NewArchiver) Snapshot(ctx context.Context, targets []string, opts Op
 		return nil, restic.ID{}, err
 	}
 
-	id, err := arch.repo.SaveTree(ctx, tree)
+	id, err := arch.Repo.SaveTree(ctx, tree)
 	if err != nil {
 		return nil, restic.ID{}, err
 	}
 
-	err = arch.repo.Flush(ctx)
+	err = arch.Repo.Flush(ctx)
 	if err != nil {
 		return nil, restic.ID{}, err
 	}
 
-	err = arch.repo.SaveIndex(ctx)
+	err = arch.Repo.SaveIndex(ctx)
 	if err != nil {
 		return nil, restic.ID{}, err
 	}
@@ -399,7 +399,7 @@ func (arch *NewArchiver) Snapshot(ctx context.Context, targets []string, opts Op
 	sn.Excludes = opts.Excludes
 	sn.Tree = &id
 
-	id, err = arch.repo.SaveJSONUnpacked(ctx, restic.SnapshotFile, sn)
+	id, err = arch.Repo.SaveJSONUnpacked(ctx, restic.SnapshotFile, sn)
 	if err != nil {
 		return nil, restic.ID{}, err
 	}
