@@ -357,20 +357,21 @@ func (arch *NewArchiver) Snapshot(ctx context.Context, targets []string, opts Op
 		return nil, restic.ID{}, err
 	}
 
-	for i, target := range targets {
-		targets[i] = filepath.Clean(target)
+	var cleanTargets []string
+	for _, t := range targets {
+		cleanTargets = append(cleanTargets, filepath.Clean(t))
 	}
 
-	debug.Log("targets before resolving: %v", targets)
+	debug.Log("targets before resolving: %v", cleanTargets)
 
-	targets, err = resolveRelativeTargets(targets)
+	cleanTargets, err = resolveRelativeTargets(cleanTargets)
 	if err != nil {
 		return nil, restic.ID{}, err
 	}
 
-	debug.Log("targets after resolving: %v", targets)
+	debug.Log("targets after resolving: %v", cleanTargets)
 
-	atree, err := NewArchiveTree(targets)
+	atree, err := NewArchiveTree(cleanTargets)
 	if err != nil {
 		return nil, restic.ID{}, err
 	}
