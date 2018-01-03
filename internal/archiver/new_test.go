@@ -478,7 +478,7 @@ func TestNewArchiverSnapshot(t *testing.T) {
 			}
 
 			t.Logf("targets: %v", targets)
-			_, snapshotID, err := arch.Snapshot(ctx, targets, Options{Time: time.Now()})
+			sn, snapshotID, err := arch.Snapshot(ctx, targets, Options{Time: time.Now()})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -492,6 +492,18 @@ func TestNewArchiverSnapshot(t *testing.T) {
 			TestEnsureSnapshot(t, repo, snapshotID, want)
 
 			checker.TestCheckRepo(t, repo)
+
+			// check that the snapshot contains the targets with absolute paths
+			for i, target := range sn.Paths {
+				atarget, err := filepath.Abs(test.targets[i])
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if target != atarget {
+					t.Errorf("wrong path in snapshot: want %v, got %v", atarget, target)
+				}
+			}
 		})
 	}
 }
