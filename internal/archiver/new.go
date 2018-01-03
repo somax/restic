@@ -23,6 +23,7 @@ type SelectFunc func(item string, fi os.FileInfo) bool
 type NewArchiver struct {
 	Repo   restic.Repository
 	Select SelectFunc
+	FS     fs.FS
 }
 
 // Valid returns an error if anything is missing.
@@ -33,7 +34,10 @@ func (arch *NewArchiver) Valid() error {
 
 	if arch.Select == nil {
 		return errors.New("Select is not set")
+	}
 
+	if arch.FS == nil {
+		return errors.New("FS is not set")
 	}
 
 	return nil
@@ -42,8 +46,7 @@ func (arch *NewArchiver) Valid() error {
 // SaveFile chunks a file and saves it to the repository.
 func (arch *NewArchiver) SaveFile(ctx context.Context, filename string) (*restic.Node, error) {
 	debug.Log("%v", filename)
-	// f, err := fs.OpenFile(filename, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
-	f, err := fs.OpenFile(filename, os.O_RDONLY, 0)
+	f, err := arch.FS.OpenFile(filename, fs.O_RDONLY|fs.O_NOFOLLOW, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +115,7 @@ func (arch *NewArchiver) SaveFile(ctx context.Context, filename string) (*restic
 func (arch *NewArchiver) saveTree(ctx context.Context, prefix string, fi os.FileInfo, dir string) (*restic.Tree, error) {
 	debug.Log("%v %v", prefix, dir)
 
-	f, err := fs.Open(dir)
+	f, err := arch.FS.Open(dir)
 	if err != nil {
 		return nil, errors.Wrap(err, "Open")
 	}
@@ -199,7 +202,7 @@ type SnapshotOptions struct {
 // Save saves a target (file or directory) to the repo.
 func (arch *NewArchiver) Save(ctx context.Context, prefix, target string) (node *restic.Node, err error) {
 	debug.Log("%v target %q", prefix, target)
-	fi, err := fs.Lstat(target)
+	fi, err := arch.FS.Lstat(target)
 	if err != nil {
 		return nil, err
 	}
@@ -273,7 +276,7 @@ func (arch *NewArchiver) saveArchiveTree(ctx context.Context, prefix string, atr
 
 		debug.Log("%v, saved subtree %v as %v", prefix, subtree, id.Str())
 
-		fi, err := fs.Lstat(subatree.FileInfoPath)
+		fi, err := arch.FS.Lstat(subatree.FileInfoPath)
 		if err != nil {
 			return nil, err
 		}
@@ -297,7 +300,7 @@ func (arch *NewArchiver) saveArchiveTree(ctx context.Context, prefix string, atr
 	return tree, nil
 }
 
-func readdirnames(dir string) ([]string, error) {
+func readdirnames(fs fs.FS, dir string) ([]string, error) {
 	f, err := fs.Open(dir)
 	if err != nil {
 		return nil, err
@@ -319,7 +322,7 @@ func readdirnames(dir string) ([]string, error) {
 
 // resolveRelativeTargets replaces targets that only contain relative
 // directories ("." or "../../") to the contents of the directory.
-func resolveRelativeTargets(targets []string) ([]string, error) {
+func resolveRelativeTargets(fs fs.FS, targets []string) ([]string, error) {
 	result := make([]string, 0, len(targets))
 	for _, target := range targets {
 		pc := pathComponents(target, false)
@@ -329,7 +332,7 @@ func resolveRelativeTargets(targets []string) ([]string, error) {
 		}
 
 		debug.Log("replacing %q with readdir(%q)", target, target)
-		entries, err := readdirnames(target)
+		entries, err := readdirnames(fs, target)
 		if err != nil {
 			return nil, err
 		}
@@ -364,7 +367,7 @@ func (arch *NewArchiver) Snapshot(ctx context.Context, targets []string, opts Op
 
 	debug.Log("targets before resolving: %v", cleanTargets)
 
-	cleanTargets, err = resolveRelativeTargets(cleanTargets)
+	cleanTargets, err = resolveRelativeTargets(arch.FS, cleanTargets)
 	if err != nil {
 		return nil, restic.ID{}, err
 	}

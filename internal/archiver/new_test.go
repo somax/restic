@@ -49,6 +49,12 @@ func TestNewArchiverSaveFile(t *testing.T) {
 				Select: func(string, os.FileInfo) bool {
 					return true
 				},
+				FS: fs.Local{},
+			}
+
+			err := arch.Valid()
+			if err != nil {
+				t.Fatal(err)
 			}
 
 			node, err := arch.SaveFile(ctx, filepath.Join(tempdir, "file"))
@@ -174,6 +180,12 @@ func TestNewArchiverSaveDir(t *testing.T) {
 				Select: func(string, os.FileInfo) bool {
 					return true
 				},
+				FS: fs.Local{},
+			}
+
+			err := arch.Valid()
+			if err != nil {
+				t.Fatal(err)
 			}
 
 			chdir := tempdir
@@ -462,6 +474,12 @@ func TestNewArchiverSnapshot(t *testing.T) {
 				Select: func(string, os.FileInfo) bool {
 					return true
 				},
+				FS: fs.Local{},
+			}
+
+			err := arch.Valid()
+			if err != nil {
+				t.Fatal(err)
 			}
 
 			chdir := tempdir
@@ -628,6 +646,12 @@ func TestNewArchiverSnapshotSelect(t *testing.T) {
 			arch := NewArchiver{
 				Repo:   repo,
 				Select: test.selFn,
+				FS:     fs.Local{},
+			}
+
+			err := arch.Valid()
+			if err != nil {
+				t.Fatal(err)
 			}
 
 			back := fs.TestChdir(t, tempdir)
