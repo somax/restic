@@ -342,18 +342,13 @@ func runBackup(opts BackupOptions, gopts GlobalOptions, args []string) error {
 		return errors.Fatal("nothing to backup, please specify target files/dirs")
 	}
 
-	target := make([]string, 0, len(args))
-	for _, d := range args {
-		if a, err := filepath.Abs(d); err == nil {
-			d = a
-		}
-		target = append(target, d)
-	}
-
+	target := args
 	target, err = filterExisting(target)
 	if err != nil {
 		return err
 	}
+
+	Printf("targets: %v\n", target)
 
 	// rejectFuncs collect functions that can reject items from the backup
 	var rejectFuncs []RejectFunc
@@ -441,7 +436,7 @@ func runBackup(opts BackupOptions, gopts GlobalOptions, args []string) error {
 		Verbosef("using parent snapshot %v\n", parentSnapshotID.Str())
 	}
 
-	Verbosef("scan %v\n", target)
+	// Verbosef("scan %v\n", target)
 
 	selectFilter := func(item string, fi os.FileInfo) bool {
 		for _, reject := range rejectFuncs {
@@ -452,20 +447,20 @@ func runBackup(opts BackupOptions, gopts GlobalOptions, args []string) error {
 		return true
 	}
 
-	stat, err := archiver.Scan(target, selectFilter, newScanProgress(gopts))
-	if err != nil {
-		return err
-	}
+	// stat, err := archiver.Scan(target, selectFilter, newScanProgress(gopts))
+	// if err != nil {
+	// 	return err
+	// }
 
-	arch := archiver.New(repo)
-	arch.Excludes = opts.Excludes
-	arch.SelectFilter = selectFilter
-	arch.WithAccessTime = opts.WithAtime
+	// arch := archiver.New(repo)
+	// arch.Excludes = opts.Excludes
+	// arch.SelectFilter = selectFilter
+	// arch.WithAccessTime = opts.WithAtime
 
-	arch.Warn = func(dir string, fi os.FileInfo, err error) {
-		// TODO: make ignoring errors configurable
-		Warnf("%s\rwarning for %s: %v\n", ClearLine(), dir, err)
-	}
+	// arch.Warn = func(dir string, fi os.FileInfo, err error) {
+	// 	// TODO: make ignoring errors configurable
+	// 	Warnf("%s\rwarning for %s: %v\n", ClearLine(), dir, err)
+	// }
 
 	timeStamp := time.Now()
 	if opts.TimeStamp != "" {
@@ -475,7 +470,29 @@ func runBackup(opts BackupOptions, gopts GlobalOptions, args []string) error {
 		}
 	}
 
-	_, id, err := arch.Snapshot(gopts.ctx, newArchiveProgress(gopts, stat), target, opts.Tags, opts.Hostname, parentSnapshotID, timeStamp)
+	arch := &archiver.NewArchiver{
+		Repo:   repo,
+		Select: selectFilter,
+	}
+
+	// _, id, err := arch.Snapshot(gopts.ctx, newArchiveProgress(gopts, stat), target, opts.Tags, opts.Hostname, parentSnapshotID, timeStamp)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// _, id, err := arch.Snapshot(gopts.ctx, newArchiveProgress(gopts, stat), target, opts.Tags, opts.Hostname, parentSnapshotID, timeStamp)
+	// if err != nil {
+	// 	return err
+	// }
+
+	snapshotOpts := archiver.Options{
+		Excludes: opts.Excludes,
+		Tags:     opts.Tags,
+		Time:     timeStamp,
+		Hostname: opts.Hostname,
+	}
+
+	_, id, err := arch.Snapshot(gopts.ctx, target, snapshotOpts)
 	if err != nil {
 		return err
 	}
